@@ -216,5 +216,67 @@ if (isset($_POST['action']) && $_POST['action'] == 'listVeteransBySport') {
 }
 ?>
 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Veterans List</title>
+</head>
+<body>
+<h2>Veterans List</h2>
+<form action="" method="POST">
+    <label for="limit">Limit:</label>
+    <input type="number" id="limit" name="limit" value="10" min="1">
+    <input type="submit" value="Show">
+</form>
+<br>
+
+<?php
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    // Получение значения LIMIT из формы
+    $limit = isset($_POST['limit']) ? intval($_POST['limit']) : 10;
+
+    // Установка соединения с базой данных
+    $dbconn = pg_connect("host=localhost dbname=php user=postgres password=12345")
+    or die('Could not connect: ' . pg_last_error());
+
+    // Запрос к базе данных с использованием LIMIT
+    $query = "SELECT 
+                    v.surname,
+                    ag.age_group,
+                    v.city,
+                    s.name AS sport_name
+                  FROM 
+                    veterans v
+                  JOIN 
+                    sports s ON v.id_sport = s.id_sport
+                  JOIN 
+                    age_groups ag ON v.id_age_group = ag.id_age_group
+                  ORDER BY 
+                    v.surname
+                  LIMIT 
+                    $limit";
+
+    // Вывод результата
+    echo "<table>";
+    echo "<tr><th>Surname</th><th>Age Group</th><th>City</th><th>Sport</th></tr>";
+
+    $result = pg_query($query) or die('Query failed: ' . pg_last_error());
+    while ($row = pg_fetch_assoc($result)) {
+        echo "<tr>";
+        echo "<td>" . $row['surname'] . "</td>";
+        echo "<td>" . $row['age_group'] . "</td>";
+        echo "<td>" . $row['city'] . "</td>";
+        echo "<td>" . $row['sport_name'] . "</td>";
+        echo "</tr>";
+    }
+    echo "</table>";
+
+    // Закрытие соединения с базой данных
+    pg_close($dbconn);
+}
+?>
 </body>
 </html>
+
