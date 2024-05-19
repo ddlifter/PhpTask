@@ -150,3 +150,71 @@ if (isset($_POST['action']) && $_POST['action'] == 'getSportVeteransCount') {
 
 </body>
 </html>
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Управление ветеранами</title>
+    <style>
+        /* Стили */
+    </style>
+</head>
+<body>
+<!-- Ваши существующие разделы -->
+
+<h2>Список ветеранов спорта</h2>
+<form method="post" action="">
+    <input type="hidden" name="action" value="listVeteransBySport">
+    <button type="submit">Получить список</button>
+</form>
+
+<?php
+if (isset($_POST['action']) && $_POST['action'] == 'listVeteransBySport') {
+    // Подключение к базе данных
+    $dbconn = pg_connect("host=localhost dbname=php user=postgres password=12345") or die('Could not connect: '. pg_last_error());
+
+    // SQL-запрос для получения списка ветеранов, сгруппированных по виду спорта
+    $query = "SELECT 
+            s.name AS sport_name,
+            v.surname || ' ' || v.name || ' ' || v.thirdname AS full_name,
+            v.city,
+            ag.age_group,
+            COUNT(*) AS veterans_count
+          FROM 
+            veterans v
+          JOIN 
+            sports s ON v.id_sport = s.id_sport
+          JOIN 
+            age_groups ag ON v.id_age_group = ag.id_age_group
+          GROUP BY 
+            s.name, v.surname, v.name, v.thirdname, v.city, ag.age_group
+          ORDER BY
+            s.name";
+
+    $result = pg_query($query) or die('Query failed: ' . pg_last_error());
+
+// Вывод результата
+    echo "<table>";
+    echo "<tr><th>Спорт</th><th>ФИО спортсмена</th><th>Город</th><th>Возрастная группа</th><th>Количество ветеранов</th></tr>";
+    while ($row = pg_fetch_assoc($result)) {
+        echo "<tr>";
+        echo "<td>" . $row['sport_name'] . "</td>";
+        echo "<td>" . $row['full_name'] . "</td>";
+        echo "<td>" . $row['city'] . "</td>";
+        echo "<td>" . $row['age_group'] . "</td>";
+        echo "<td>" . $row['veterans_count'] . "</td>";
+        echo "</tr>";
+    }
+    echo "</table>";
+
+
+    // Освобождаем результат запроса
+    pg_free_result($result);
+
+    // Закрываем соединение с базой данных
+    pg_close($dbconn);
+}
+?>
+
+</body>
+</html>
